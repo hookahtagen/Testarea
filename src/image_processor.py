@@ -2,6 +2,15 @@ from PIL import Image
 
 
 class ImageProcessor:
+    """ImageProcessor
+
+        Description:
+            This class is used to encode a process an image.
+        Attributes:
+            name (str): The name of the ImageProcessor object.
+        Methods:
+            encode_image(image_file, message) -> str
+    """
 
     def __int__(self, name="ImageProcessor"):
         """Constructor
@@ -16,42 +25,82 @@ class ImageProcessor:
         """
         self.name = name
 
-    def encode_image(self, image_file, message):
-        # Open the image and convert to RGB format
-        img = Image.open(image_file).convert('RGB')
+    @staticmethod
+    def p_continue(self):
+        """p_continue
 
-        # Get the size of the image
-        width, height = img.size
+            Description:
+                This method is used to pause the program and wait for user input.
+            Args:
+            Returns:
+                None
+        """
 
-        # Check if the message is too long to fit in the image
-        max_chars = (width * height * 3) // 8 - 4
-        if len(message) > max_chars:
-            raise ValueError('Message too long to encode in the image')
+        continue_message = "Press any key to continue..."
+        _ = input(continue_message)
 
-        # Convert the message to binary format
-        message += '\0' * (4 - len(message) % 4)
-        binary_message = ''.join(format(ord(c), '08b') for c in message)
+    @staticmethod
+    def encode_image(self, image_path, message):
+        # Open the image and convert it to RGB format
+        image = Image.open(image_path).convert('RGB')
 
-        # Add the length of the message to the beginning of the binary data
-        binary_length = format(len(message), '032b')
-        binary_data = binary_length + binary_message
+        # Get the width and height of the image
+        width, height = image.size
 
-        # Encode the binary data into the image
-        pixels = img.load()
-        index = 0
-        for y in range(height):
-            for x in range(width):
-                r, g, b = pixels[x, y]
-                if index < len(binary_data):
-                    pixels[x, y] = (r & 254 | int(binary_data[index]), g & 254 | int(binary_data[index + 1]),
-                                    b & 252 | int(binary_data[index + 2]))
-                    index += 3
-                else:
-                    break
+        # Convert the message to binary
+        binary_message = ''.join(format(ord(char), '08b') for char in message)
 
-        # Save the image with the message encoded
-        output_file = image_file[:-4] + '_encoded.png'
-        img.save(output_file)
-        return output_file
+        # Check if the length of the binary message is less than or equal to the number of pixels in the image
+        max_message_length = width * height * 3 // 8
+        if len(binary_message) > max_message_length:
+            raise ValueError('Message too long to embed in the image.')
 
+        # Embed the message in the image using LSB steganography
+        binary_message += '0' * (max_message_length - len(binary_message))
+        pixels = list(image.getdata())
+        new_pixels = []
+        for i in range(0, max_message_length, 3):
+            pixel = pixels[i // 3]
+            new_pixel = (
+                pixel[0] & ~1 | int(binary_message[i]),
+                pixel[1] & ~1 | int(binary_message[i + 1]),
+                pixel[2] & ~1 | int(binary_message[i + 2])
+            )
+            new_pixels.append(new_pixel)
 
+        print(f'Length of pixel data: {len(pixels)}')
+        print(f'Length of new pixel data: {len(new_pixels)}')
+
+        # Create a new image from the modified pixels and save it
+        # noinspection PyTypeChecker
+        new_image = Image.new(image.mode, image.size)
+        # noinspection PyTypeChecker
+        new_image.putdata(new_pixels)
+        print(f'Encoded image saved to {image_path.replace(".", "_encoded.")}.')
+        new_image.save(image_path.replace('.', '_encoded.'))
+
+        self.p_continue(self)
+
+    @staticmethod
+    def extract_text_from_image(self, image_path):
+        # Open the image and convert it to RGB format
+        image = Image.open(image_path).convert('RGB')
+
+        # Get the width and height of the image
+        width, height = image.size
+
+        # Extract the message from the image using LSB steganography
+        pixels = list(image.getdata())
+        binary_message = ''
+        for pixel in pixels:
+            binary_message += str(pixel[0] & 1)
+            binary_message += str(pixel[1] & 1)
+            binary_message += str(pixel[2] & 1)
+
+        # Convert the binary message back to ASCII text
+        message = ''
+        for i in range(0, len(binary_message), 8):
+            message += chr(int(binary_message[i:i + 8], 2))
+
+        # Return the extracted message
+        return message.strip('\0')
