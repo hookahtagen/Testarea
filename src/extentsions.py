@@ -1,39 +1,40 @@
 import logging
+import json
 
 
-class NoiseLog:
-
-    def __init__(self):
+class NoiseLogger:
+    def __init__(self, level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
-
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
+        self.logger.setLevel(level)
         self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        console_handler.setFormatter(self.formatter)
-        self.logger.addHandler(console_handler)
 
-        file_handler = logging.FileHandler('../log/noise_detail.log')
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(self.formatter)
-        self.logger.addHandler(file_handler)
+        self.file_handler = logging.FileHandler('../log/noise.log')
+        self.file_handler.setLevel(level)
+        self.file_handler.setFormatter(self.formatter)
 
-    def info(self, message: str):
+        self.console_handler = logging.StreamHandler()
+        self.console_handler.setLevel(level)
+        self.console_handler.setFormatter(self.formatter)
+
+        self.logger.addHandler(self.file_handler)
+        self.logger.addHandler(self.console_handler)
+
+    def log_dict(self, file: str, data: dict):
+        file_hash = hash(file)
+        message = f"Used file: {file}" + "\n" + f"File Hash: {file_hash}" + "\n" + json.dumps(data, indent=4)
+        self.logger.info(f"\n{message}")
+
+    def info(self, message):
         self.logger.info(message)
 
-    def debug(self, message: str):
+    def debug(self, message):
         self.logger.debug(message)
 
-    def warning(self, message: str):
+    def warning(self, message):
         self.logger.warning(message)
 
-    def error(self, message: str):
+    def error(self, message):
         self.logger.error(message)
 
-    def critical(self, message: str):
+    def critical(self, message):
         self.logger.critical(message)
-
-    def formatted_log(self, message: str):
-        indentation = ' ' * 4
-        formatted_message = '{}{}'.format(indentation, message)
-        self.logger.info(formatted_message)

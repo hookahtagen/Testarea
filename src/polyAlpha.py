@@ -83,8 +83,8 @@ class Alphabet:
 
         return alphabets
 
-    def generate_alphabet(self, abc_count=4):
-        abc = ''
+    @staticmethod
+    def generate_alphabet(abc_count=4):
         abc_dict = {}
 
         def get_key_value(number: int) -> str:
@@ -117,9 +117,9 @@ class Alphabet:
                 '26': 'Z'
             }
 
-            key_name = val_dict[str(number)]
+            result = val_dict[str(number)]
 
-            return key_name
+            return result
 
         for i in range(abc_count):
             abc = list(string.ascii_uppercase)
@@ -131,7 +131,8 @@ class Alphabet:
 
         return abc_dict
 
-    def save_alpha(self, abc_dict: dict[str, str], log: Logger):
+    @staticmethod
+    def save_alpha(abc_dict: dict[str, str], logg: Logger):
         ret: int = 1
 
         out_file = '../data/alphabets.txt'
@@ -141,8 +142,8 @@ class Alphabet:
                 out.write(f'\'{key}\' : \'{value}\'\n')
                 ret = 0
 
-        log.info(f'Success!')
-        log.info(f'Wrote {len(abc_dict)} alphabets to \'{out_file}\'.')
+        logg.info(f'Success!')
+        logg.info(f'Wrote {len(abc_dict)} alphabets to \'{out_file}\'.')
         message = f'Note:\nIn order to use the generated alphabets, please copy\nthe contents of alphabets.txt, ' \
                   f'found in \'/data\' to\nthe variable \'alphabets\' in the file \'polyAlpha.py\'\n'
         print(message)
@@ -155,7 +156,6 @@ def clear_screen() -> None:
 
 def main(custom_logger: Logger) -> None:
     abc = Alphabet('0')
-    alpha = {}
 
     in_text = 'How many alphabets do you want to generate? You can choose up to 26 alphabets. Num alphabets> '
     abc_count = int(input(in_text))
@@ -171,7 +171,6 @@ def main(custom_logger: Logger) -> None:
     p_print.pprint(alpha)
     save_alpha = input('\n\nDo you want to save the generated alphabets to the program? (y/n) > ').lower()
 
-    ret = 1
     if save_alpha == 'y':
         ret = abc.save_alpha(alpha, custom_logger)
     elif save_alpha == 'n':
@@ -182,7 +181,6 @@ def main(custom_logger: Logger) -> None:
         ret = 1
 
     exit(ret)
-
 
 
 if __name__ == '__main__':
