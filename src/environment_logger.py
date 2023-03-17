@@ -52,6 +52,6 @@ def main():
 if __name__ == '__main__':
     print("Starting measurement...")
     print("This will take about 24 hours.")
-    print("Please wait...")
+    print("Please wait....")
 
     exit(0 if main() else 1)
