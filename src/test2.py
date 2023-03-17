@@ -21,7 +21,7 @@ class ChatGpt:
 
     def __init__(self, name="ChatGpt", **kwargs):
         self.name = name
-        openai.api_key = "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"  # This is not a valid api key. so don't try to use it 
+        openai.api_key = "####"
         self.result = ""
         self.kwargs = kwargs
 

@@ -2,6 +2,7 @@ import threading
 import random
 import time
 import concurrent.futures as cf
+# Not used at the moment
 import timeit
 from typing import Optional
 
@@ -23,6 +24,7 @@ class GeneratorSettings:
         self.max_threads = 4
 
 
+# noinspection PyShadowingNames
 class PrimeGenerator:
     def __init__(self, num_bits: int = 2048, max_tries: Optional[int] = 1000, config: GeneratorSettings = GeneratorSettings("default")):
         self.settings = config
@@ -185,6 +187,7 @@ class PrimeGenerator:
         return True
 
 
+# noinspection PyShadowingNames
 def exponentiation(base: int, exponent: int):
     res = 1
     for _ in range(exponent):
@@ -195,6 +198,12 @@ def exponentiation(base: int, exponent: int):
 def wait_for_event(generator: PrimeGenerator):
     generator.prime_event.wait()
     generator.prime_event.clear()
+
+
+# noinspection PyShadowingNames
+def run_timeit(a, b) -> float:
+    rounds = 1000
+    return timeit.timeit(lambda: a * b, number=rounds)
 
 
 if __name__ == '__main__':
@@ -233,16 +242,18 @@ if __name__ == '__main__':
         primeGenerator.start()
 
         wait_for_event(primeGenerator)
-        p1 = primeGenerator.prime
+        p1: int = primeGenerator.prime
 
         wait_for_event(primeGenerator)
-        p2 = primeGenerator.prime
+        p2: int = primeGenerator.prime
 
         primeGenerator.stop()
 
-        a = 2
-        b = 3
+        # result = p1 * p2
+        # print(f"Result: {result}")
 
-        res = powmod(a, b)
-        print(res)
+        # use timeit to measure the time it takes to calculate the product of the two primes
+        total_time = run_timeit(p1, p2)
 
+        rounds = 1000
+        print(f"Average time for 1 round out of {rounds} rounds: {total_time / rounds}")
