@@ -1,8 +1,9 @@
 import sqlite3
+import time
 
 import numpy as np
 from sklearn.linear_model import LinearRegression
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
 
 
 def db_connect(database: str) -> sqlite3.Connection | None:
@@ -32,42 +33,41 @@ def predict_temperature(data):
     X = []
     y = []
     for i in range(len(data)-1):
-        temp, pressure, humidity, wind = data[i][1], data[i][2], data[i][3], data[i][4]
+        temp, pressure, humidity,  = data[i][1], data[i][2], data[i][3]
         next_temp = data[i+1][1]
-        X.append([temp, pressure, humidity, wind])
+        X.append([temp, pressure, humidity])
         y.append(next_temp)
 
     # Das letzte Element der Daten als Input-Vektor für die Vorhersage nutzen
-    last_temp, last_pressure, last_humidity, last_wind = data[-1][1], data[-1][2], data[-1][3], data[-1][4]
-    future_pressure, future_humidity, future_wind = last_pressure, last_humidity, last_wind
-    future_time = data[-1][0] + timedelta(minutes=10)
+    last_temp, last_pressure, last_humidity = data[-1][1], data[-1][2], data[-1][3]
+    future_pressure, future_humidity = last_pressure, last_humidity
+    future_time = data[-1][0] + 10 * 60
 
     # Eine lineare Regression auf den Daten durchführen
     regressor = LinearRegression()
     regressor.fit(X, y)
 
     # Die Temperatur in 10 Minuten vorhersagen
-    future_X = np.array([[last_temp, future_pressure, future_humidity, future_wind]])
-    future_temp = regressor.predict(future_X)[0]
+    future_x = np.array([[last_temp, future_pressure, future_humidity]])
+    future_temp = regressor.predict(future_x)[0]
 
     # Die Vorhersage ausgeben
     return future_time, future_temp
 
 
 if __name__ == '__main__':
-    database = "../data/weather.db"
-    conn = db_connect(database)
+    conn = sqlite3.connect('../data/weather.db')
+    c = conn.cursor()
 
-    data_interval = 5 * 60  # 5 Minuten
-    prediction_interval = 10 * 60  # 10 Minuten
+    # Get the current time in UTC timezone
+    now = time.time()
+    five_minutes_ago = now - 5 * 60
 
-    # Load the data of the last 5 minutes from the database
-    cursor = conn.cursor()
-    sql_query = f"SELECT * FROM environment_data WHERE timestamp > {int(datetime.now().timestamp()) - data_interval}"
-    cursor.execute(sql_query)
-    data = cursor.fetchall()
+    query = f"SELECT timestamp, temperature, pressure, humidity FROM environment_data WHERE timestamp > {five_minutes_ago}"
+    data = c.execute(query).fetchall()
 
     # Predict the temperature in 10 minutes
     future_time, future_temp = predict_temperature(data)
 
-    print(f"Temperature at {future_time}: {future_temp} °C")
+    real_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(future_time))
+    print(f"Temperature at {real_time}: {future_temp} °C")
