@@ -9,7 +9,7 @@ class constants:
 
 
 def read_sensor() -> tuple[str, str, str]:
-    api_url = "http://192.168.2.55:5000/environment_data"
+    api_url = "http://192.168.2.55:6000/environment-data"
     response = requests.get(api_url)
 
     # Remove any characters after the first whitespace
@@ -65,7 +65,7 @@ def update_data_point(con: sqlite3.connect, data: tuple) -> bool:
 
 
 def main():
-    database = "../data/weather.db"
+    database = "/home/hendrik/Projects/Testarea/data/weather.db"
 
     conn = db_connect(database)
     if conn is None:
@@ -89,6 +89,7 @@ def main():
 
 
 if __name__ == '__main__':
+    time.sleep(4)
     print("Starting measurement...")
     print("This will take about 24 hours.")
     print("Please wait...")

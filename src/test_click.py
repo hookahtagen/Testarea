@@ -1,11 +1,12 @@
 from enum import auto
-
+from mimetypes import MimeTypes
 import sys
 from time import sleep
-
+from xml.dom import minidom
 from PyInquirer import prompt, Separator, Validator, ValidationError
+import pcomfortcloud
 import pcomfortcloud as pc
-
+from regex import F
 from hc_sr04 import clear_screen
 
 
@@ -89,8 +90,7 @@ class MENUS:
                 'LowMid',
                 'Mid',
                 'HighMid',
-                'High',
-                'Back'
+                'High'
             ]
         }
     ]
@@ -105,8 +105,7 @@ class MENUS:
                 'Cool',
                 'Dry',
                 'Heat',
-                'Fan',
-                'Back'
+                'Fan'
             ]
         }
     ]
@@ -119,8 +118,7 @@ class MENUS:
             'choices': [
                 'Auto',
                 'Quiet',
-                'Powerful',
-                'Back'
+                'Powerful'
             ]
         }
     ]
@@ -136,8 +134,7 @@ class MENUS:
                 'DownMid',
                 'Mid',
                 'UpMid',
-                'Up',
-                'Back'
+                'Up'
             ]
         }
     ]
@@ -153,8 +150,7 @@ class MENUS:
                 'LeftMid',
                 'Mid',
                 'RightMid',
-                'Right',
-                'Back'
+                'Right'
             ]
         }
     ]
@@ -186,7 +182,7 @@ class ClimateLink:
         # self.password: str = getpass.getpass("Password: ")
 
         try:
-            self.session = pc.Session(self.username, self.password)
+            self.session = pcomfortcloud.Session(self.username, self.password)
             self.session.login()
         except Exception as e:
             print(f"Exception occurred:\n{e}\n")
@@ -266,11 +262,10 @@ class ClimateLink:
             "High": pc.constants.FanSpeed.High
         }
 
-        if selected_speed != 'Back':
-            self.session.set_device(
-                self.selected_device_id, power=pc.constants.Power.On, fanSpeed=speed_dict[selected_speed])
-            
-            self.show_success_message()
+        self.session.set_device(
+            self.selected_device_id, power=pc.constants.Power.On, fanSpeed=speed_dict[selected_speed])
+        
+        self.show_success_message()
 
     def set_operation_mode_dm(self):
         answer = prompt(MENUS.set_operation_mode)
@@ -281,14 +276,13 @@ class ClimateLink:
             "Cool": pc.constants.OperationMode.Cool,
             "Dry": pc.constants.OperationMode.Dry,
             "Heat": pc.constants.OperationMode.Heat,
-            "Fan": pc.constants.OperationMode.Fan
+            "Fan / Nanoex": pc.constants.OperationMode.Fan
         }
 
-        if selected_operation_mode != 'Back':
-            self.session.set_device(
-                self.selected_device_id, power=pc.constants.Power.On, mode=operation_mode_dict[selected_operation_mode])
-            
-            self.show_success_message()
+        self.session.set_device(
+            self.selected_device_id, power=pc.constants.Power.On, mode=operation_mode_dict[selected_operation_mode])
+        
+        self.show_success_message()
 
     def set_eco_mode_dm(self):
         answer = prompt(MENUS.set_eco_mode)
@@ -300,11 +294,10 @@ class ClimateLink:
             "Powerful": pc.constants.EcoMode.Powerful
         }
         
-        if selected_eco_mode != 'Back':
-            self.session.set_device(
-                self.selected_device_id, power=pc.constants.Power.On, eco=eco_mode_dict[selected_eco_mode])
-            
-            self.show_success_message()
+        self.session.set_device(
+            self.selected_device_id, power=pc.constants.Power.On, eco=eco_mode_dict[selected_eco_mode])
+        
+        self.show_success_message()
 
     def set_vertical_air_swing_dm(self):
         answer = prompt(MENUS.set_vertical_air_swing)
@@ -319,11 +312,10 @@ class ClimateLink:
             "Up": pc.constants.AirSwingUD.Up
         }
 
-        if selected_vertical_angle != 'Back':
-            self.session.set_device(
-                self.selected_device_id, power=pc.constants.Power.On, aiSwingVertical=vertical_angle_dict[selected_vertical_angle])
-            
-            self.show_success_message()
+        self.session.set_device(
+            self.selected_device_id, power=pc.constants.Power.On, aiSwingVertical=vertical_angle_dict[selected_vertical_angle])
+        
+        self.show_success_message()
 
     def set_horizontal_air_swing_dm(self):
         answer = prompt(MENUS.set_horizontal_air_swing)
@@ -338,11 +330,10 @@ class ClimateLink:
             "Right": pc.constants.AirSwingLR.Right
         }
         
-        if selected_horizontal_angle != 'Back':
-            self.session.set_device(
-                self.selected_device_id, power=pc.constants.Power.On, airSwingHorizontal=horizontal_angle_dict[selected_horizontal_angle])
+        self.session.set_device(
+            self.selected_device_id, power=pc.constants.Power.On, airSwingHorizontal=horizontal_angle_dict[selected_horizontal_angle])
 
-            self.show_success_message()
+        self.show_success_message()
         
     def device_manager(self):
         self.show_available_devices(sleep_flag=False)
@@ -354,7 +345,7 @@ class ClimateLink:
             print()
 
             device_option_selected = prompt(MENUS.device_manager_questions)
-            print(f"\n\n{device_option_selected}")
+
             if device_option_selected['device_manager'] == 'Turn device on/off':
                 self.turn_on_off_device(device_man=True)
             elif device_option_selected['device_manager'] == 'Set the temperature':

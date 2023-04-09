@@ -6,6 +6,8 @@ from core_functions.clear_screen import clear_screen as cs
 from time import sleep as sleep
 
 
+
+
 # noinspection PyTypeHints
 class ChatGpt:
 

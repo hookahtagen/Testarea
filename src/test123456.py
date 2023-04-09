@@ -98,8 +98,13 @@ if __name__ == "__main__":
     
     motor = StepperMotor("motor1", [A,B,C,D], 0.002)
     
-    degree = 360
+    degree = 180
     
+    start = time.time()
     motor.turn_by_degree(True, degree)
+    motor.turn_by_degree(False, degree)
+    end = time.time()
+    
+    print(f"Time taken: {end-start} seconds")
     
     motor.cleanup()
