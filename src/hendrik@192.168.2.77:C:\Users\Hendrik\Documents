@@ -1,0 +1,169 @@
+import os
+import sys
+import time
+import math
+import RPi._GPIO as GPIO
+
+from threading import Thread
+from rpi_ws281x import PixelStrip, Color
+from gpiozero import MCP3008
+
+
+def clear_screen():
+    # os.system("clear")
+    print('\x1b[1A\x1b[2K', end='')
+
+
+class LedStrip:
+    def __init__(self, name: str = "LedStrip", led_count: int = 8, data_out_pin: int = 18) -> None:
+        self.name = name
+        self.ref_voltage = 3.3
+
+        self.led_count = led_count
+        self.data_out_pin = data_out_pin
+
+        self.brightness = 0
+
+        self.led_freq_hz = 800000
+        self.led_dma = 10
+
+        self.led_invert = False
+        self.led_channel = 0
+
+        self.strip = PixelStrip(self.led_count, self.data_out_pin, self.led_freq_hz,
+                                self.led_dma, self.led_invert, self.brightness, self.led_channel)
+
+        self.strip.begin()
+
+        self.brightness_selector = Thread(
+            target=self.brightness_setter)
+
+        self.is_running = False
+
+        self.debounce = 100
+        self.last_button_hit = 0.0
+
+    def color_selector(self):
+        print("TEST select")
+        color_value = 0
+
+        while True:
+            # clear_screen()
+            voltage = self.get_voltage()
+            color_value = int(voltage * (255 / self.ref_voltage))
+
+            print(f"Calculated color value: {color_value}")
+            if GPIO.input(21) == GPIO.HIGH and time.time() - self.last_button_hit > self.debounce:
+                return color_value
+
+            time.sleep(0.2)
+
+    def join(self):
+        self.brightness_selector.join()
+
+    def start(self):
+        self.is_running = True
+        self.brightness_selector.start()
+
+    def stop(self):
+        #self.brightness_selector.join()
+        self.is_running = False
+
+    def brightness_setter(self):
+        while self.is_running:
+            voltage = self.get_voltage()
+            self.brightness = int(voltage * (255/3.3))
+            
+            
+
+            self.strip.setBrightness(self.brightness)
+
+            print(f"Brightness: {self.brightness}")
+            time.sleep(0.2)
+            clear_screen()
+        print("ADC Brightness Selector disabled")
+
+    def get_voltage(self):
+        adc = MCP3008(channel=0)
+        value = adc.value
+        voltage: float = value * self.ref_voltage
+
+        return voltage
+
+    @staticmethod
+    def wheel(pos):
+        """Generate rainbow colors across 0-255 positions."""
+        if pos < 85:
+            return Color(pos * 3, 255 - pos * 3, 0)
+        elif pos < 170:
+            pos -= 85
+            return Color(255 - pos * 3, 0, pos * 3)
+        else:
+            pos -= 170
+            return Color(0, pos * 3, 255 - pos * 3)
+
+    def theaterChaseRainbow(self, wait_ms=50):
+        """Rainbow movie theater light style chaser animation."""
+        for j in range(256):
+            for q in range(3):
+                for i in range(0, self.strip.numPixels(), 3):
+                    self.strip.setPixelColor(i + q, self.wheel((i + j) % 255))
+                self.strip.show()
+                time.sleep(wait_ms / 1000.0)
+                for i in range(0, self.strip.numPixels(), 3):
+                    self.strip.setPixelColor(i + q, 0)
+
+    def strip_uni_color(self, rgb_color):
+        # print("Unicolor")
+        for i in range(0, self.strip.numPixels(), 2):
+            self.strip.setPixelColor(i, rgb_color)
+        self.strip.show()
+
+
+def stop_at_button(channel):
+    clear_screen()
+    print("STOP sequence!\nExiting now...")
+
+    GPIO.cleanup()
+    sys.exit(0)
+
+
+def set_emergency_stop(pin: int, FLAG: bool):
+    interrupt_channel = pin
+    GPIO.setup(interrupt_channel, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.add_event_detect(interrupt_channel, GPIO.RISING if FLAG else GPIO.FALLING,
+                          callback=stop_at_button, bouncetime=100)
+
+
+def setup():
+    GPIO.setmode(GPIO.BCM)
+    # GPIO.setup(21, GPIO.IN)
+    set_emergency_stop(21, True)
+
+
+if __name__ == '__main__':
+    flag = True
+    if flag:
+        rgb_color = (0, 0, 0)
+
+        setup()
+
+        led_strip = LedStrip("Strip", led_count=8, data_out_pin=18)
+        led_strip.start()
+        #led_strip.join()
+        start_time = time.time()
+
+        try:
+            while True:
+                led_strip.theaterChaseRainbow()
+        except KeyboardInterrupt:
+            print("Exiting....")
+
+    if not flag:
+        setup()
+        while True:
+            if GPIO.input(21) == GPIO.HIGH:
+                break
+            print("TEST123")
+            time.sleep(0.2)
+            clear_screen()

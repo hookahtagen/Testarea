@@ -104,7 +104,7 @@ def stop_at_button(channel):
     clear_screen()
     print("STOP sequence!\nExiting now...")
     GPIO.cleanup()
-    sys.exit(0)
+    exit(0)
 
 
 def set_emergency_stop(pin: int, FLAG: bool):
